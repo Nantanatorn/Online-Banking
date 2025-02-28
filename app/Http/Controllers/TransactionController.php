@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BankAccount;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
@@ -110,65 +111,88 @@ public function transfer(Request $request)
 {
     $user = auth()->user();
 
+    // ✅ ตรวจสอบข้อมูลที่ส่งมา
     $validated = $request->validate([
         'amount' => 'required|numeric|min:1',
         'source_account_id' => 'required|numeric|exists:bank_accounts,account_id',
         'target_account_id' => 'required|numeric|exists:bank_accounts,account_id'
     ]);
 
+    // ❌ ห้ามโอนเข้าบัญชีตัวเอง
     if ($validated['source_account_id'] == $validated['target_account_id']) {
         return response()->json(['error' => 'Cannot transfer to the same account'], 400);
     }
 
-    $fromAccount = BankAccount::where('account_id', $validated['source_account_id'])
-        ->lockForUpdate()
-        ->first();
-
-    $toAccount = BankAccount::where('account_id', $validated['target_account_id'])
-        ->lockForUpdate()
-        ->first();
-
-    if (!$fromAccount || !$toAccount) {
-        return response()->json(['error' => 'Account not found'], 404);
-    }
-
-    $fee = 5; // ค่าธรรมเนียม
-    $totalDeduct = $validated['amount'] + $fee;
-
-    if ($fromAccount->balance < $totalDeduct) {
-        return response()->json(['error' => 'Insufficient balance including fee'], 400);
-    }
+    DB::beginTransaction();
 
     try {
-        \DB::beginTransaction();
+        // ✅ ค้นหาบัญชีต้นทางและล็อกกันการเปลี่ยนแปลงขณะโอน
+        $fromAccount = BankAccount::where('account_id', $validated['source_account_id'])
+            ->where('user_id', $user->id) // ป้องกันโอนเงินจากบัญชีที่ไม่ได้เป็นเจ้าของ
+            ->lockForUpdate()
+            ->first();
 
-        $fromAccount->balance -= $totalDeduct;
+        if (!$fromAccount) {
+            DB::rollBack();
+            return response()->json(['error' => 'Unauthorized access to source account'], 403);
+        }
+
+        // ✅ ค้นหาบัญชีปลายทาง
+        $toAccount = BankAccount::where('account_id', $validated['target_account_id'])
+            ->lockForUpdate()
+            ->first();
+
+        if (!$toAccount) {
+            DB::rollBack();
+            return response()->json(['error' => 'Target account not found'], 404);
+        }
+
+        // ✅ ตรวจสอบยอดเงิน
+        if ($fromAccount->balance < $validated['amount']) {
+            DB::rollBack();
+            return response()->json(['error' => 'Insufficient balance'], 400);
+        }
+
+        // ✅ ทำธุรกรรมโอนเงิน
+        $fromAccount->balance -= $validated['amount'];
         $fromAccount->save();
 
         $toAccount->balance += $validated['amount'];
         $toAccount->save();
 
+        // ✅ บันทึกธุรกรรมฝั่งผู้โอน
         Transaction::create([
-            'id' => \Str::uuid(),
+            'id' => Str::uuid(),
             'account_id' => $fromAccount->account_id,
             'type' => 'transfer',
             'amount' => $validated['amount'],
-            'balance' => $fromAccount->balance,
             'to_account_id' => $toAccount->account_id,
         ]);
 
-        \DB::commit();
+        // ✅ บันทึกธุรกรรมฝั่งผู้รับ
+        Transaction::create([
+            'id' => Str::uuid(),
+            'account_id' => $toAccount->account_id,
+            'type' => 'receive',
+            'amount' => $validated['amount'],
+            'to_account_id' => $fromAccount->account_id,
+        ]);
+
+        DB::commit();
 
         return response()->json([
             'message' => 'Transfer successful',
             'from_balance' => $fromAccount->balance,
             'to_balance' => $toAccount->balance,
         ], 200);
+
     } catch (\Exception $e) {
-        \DB::rollBack();
-        return response()->json(['error' => 'Transfer failed: ' . $e->getMessage()], 500);
+        DB::rollBack();
+        \Log::error("Transfer failed: " . $e->getMessage());
+        return response()->json(['error' => 'Transfer failed. Please try again.'], 500);
     }
 }
+
 
 
 

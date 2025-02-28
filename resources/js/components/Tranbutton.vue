@@ -103,14 +103,17 @@ const submitTransfer = async () => {
 
   try {
     const token = localStorage.getItem("token");
+    const userAccountId = localStorage.getItem("account_id"); // ✅ ต้องมีบัญชีต้นทาง
+
     const response = await axios.post(
-      "/api/tranfer",
-      {
-        amount: parseFloat(amount.value),
-        target_account_id: targetAccountId.value,
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    "/api/transfer", // ✅ แก้ให้ถูกต้อง
+    {
+      amount: parseFloat(amount.value),
+      source_account_id: userAccountId, // ✅ บัญชีต้นทาง
+      target_account_id: targetAccountId.value,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
     successMessage.value = response.data.message;
     setTimeout(closeModal, 1500);
@@ -118,6 +121,7 @@ const submitTransfer = async () => {
     errorMessage.value = error.response?.data?.error || "Transfer failed. Try again.";
   }
 };
+
 </script>
 
 <template>
