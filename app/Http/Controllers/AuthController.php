@@ -68,7 +68,7 @@ class AuthController extends Controller
     {
         // 🔹 ตรวจสอบข้อมูลที่ส่งมา
         $validator = Validator::make($request->all(), [
-            'userid' => 'required|userid',
+            'userid' => 'required|string|size:13',
             'pin' => 'required|string|min:4|max:6',
         ]);
 
@@ -80,11 +80,13 @@ class AuthController extends Controller
         }
 
         // 🔹 ตรวจสอบข้อมูลและสร้าง Token
-        $credentials = ['userid' => $request->userid, 'pin' => $request->pin];
+        $user = User::where('userid', $request->userid)->first();
 
-        if (!$token = JWTAuth::attempt($credentials)) {
+        if (!$user || !Hash::check($request->pin, $user->pin)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
+
+        $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'message' => 'Login successful',
