@@ -111,11 +111,14 @@ public function transfer(Request $request)
 {
     $user = auth()->user();
 
+    // ✅ Debug ดูค่าที่ Vue ส่งมา
+    \Log::info("🔍 Transfer Request Data:", $request->all());
+
     // ✅ ตรวจสอบข้อมูลที่ส่งมา
     $validated = $request->validate([
         'amount' => 'required|numeric|min:1',
-        'source_account_id' => 'required|numeric|exists:bank_accounts,account_id',
-        'target_account_id' => 'required|numeric|exists:bank_accounts,account_id'
+        'source_account_id' => 'required|integer|exists:bank_accounts,account_id',
+        'target_account_id' => 'required|integer|exists:bank_accounts,account_id'
     ]);
 
     // ❌ ห้ามโอนเข้าบัญชีตัวเอง
@@ -126,7 +129,7 @@ public function transfer(Request $request)
     DB::beginTransaction();
 
     try {
-        // ✅ ค้นหาบัญชีต้นทางและล็อกกันการเปลี่ยนแปลงขณะโอน
+        // ✅ ค้นหาบัญชีต้นทาง
         $fromAccount = BankAccount::where('account_id', $validated['source_account_id'])
             ->where('user_id', $user->id) // ป้องกันโอนเงินจากบัญชีที่ไม่ได้เป็นเจ้าของ
             ->lockForUpdate()
@@ -162,7 +165,7 @@ public function transfer(Request $request)
 
         // ✅ บันทึกธุรกรรมฝั่งผู้โอน
         Transaction::create([
-            'id' => Str::uuid(),
+            'id' => \Str::uuid(),
             'account_id' => $fromAccount->account_id,
             'type' => 'transfer',
             'amount' => $validated['amount'],
@@ -171,7 +174,7 @@ public function transfer(Request $request)
 
         // ✅ บันทึกธุรกรรมฝั่งผู้รับ
         Transaction::create([
-            'id' => Str::uuid(),
+            'id' => \Str::uuid(),
             'account_id' => $toAccount->account_id,
             'type' => 'receive',
             'amount' => $validated['amount'],
@@ -179,6 +182,11 @@ public function transfer(Request $request)
         ]);
 
         DB::commit();
+
+        \Log::info("✅ Transfer Successful:", [
+            'from_balance' => $fromAccount->balance,
+            'to_balance' => $toAccount->balance,
+        ]);
 
         return response()->json([
             'message' => 'Transfer successful',
@@ -188,11 +196,10 @@ public function transfer(Request $request)
 
     } catch (\Exception $e) {
         DB::rollBack();
-        \Log::error("Transfer failed: " . $e->getMessage());
+        \Log::error("❌ Transfer failed: " . $e->getMessage());
         return response()->json(['error' => 'Transfer failed. Please try again.'], 500);
     }
 }
-
 
 
 

@@ -83,38 +83,47 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'userid' => 'required|string|size:13',
-            'pin' => 'required|string|min:4|max:6',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'userid' => 'required|string|size:13',
+        'pin' => 'required|string|min:4|max:6',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
-        }
-
-        $user = User::where('userid', $request->userid)->first();
-
-        if (!$user || !Hash::check($request->pin, $user->pin)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        try {
-            $token = JWTAuth::fromUser($user);
-        } catch (Exception $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
-
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'firstname' => $user->firstname,
-                'lastname' => $user->lastname,
-            ]
-        ]);
+    if ($validator->fails()) {
+        return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
     }
+
+    $user = User::where('userid', $request->userid)->first();
+
+    if (!$user || !Hash::check($request->pin, $user->pin)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    try {
+        $token = JWTAuth::fromUser($user);
+    } catch (Exception $e) {
+        return response()->json(['error' => 'Could not create token'], 500);
+    }
+
+    // ✅ ดึง `account_id` จาก `bank_accounts` โดยใช้ `user_id` ที่เป็น STRING (ไม่ใช่ `id`)
+    $bankAccount = BankAccount::where('user_id', $user->userid)->first(); // ✅ ใช้ `userid` ที่เป็น string
+    $accountId = $bankAccount ? $bankAccount->account_id : null;
+
+    // ✅ Debug ดูค่าที่ถูกดึงมา
+    \Log::info("🔍 User ID: {$user->userid}, Found Account ID: {$accountId}");
+
+    return response()->json([
+        'message' => 'Login successful',
+        'token' => $token,
+        'user' => [
+            'id' => $user->id,
+            'firstname' => $user->firstname,
+            'lastname' => $user->lastname,
+            'account_id' => $accountId, // ✅ ส่ง `account_id` ที่ดึงจาก `bank_accounts`
+        ]
+    ]);
+}
+
 
 
 

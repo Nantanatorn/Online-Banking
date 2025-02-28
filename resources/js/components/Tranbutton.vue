@@ -101,26 +101,42 @@ const submitTransfer = async () => {
     return;
   }
 
+  const token = localStorage.getItem("token");
+  let userAccountId = localStorage.getItem("account_id"); // ✅ ตรวจสอบค่าจาก LocalStorage
+
+  if (!userAccountId) {
+    errorMessage.value = "❌ Source account ID is missing. Please log in again.";
+    console.error("❌ LocalStorage missing 'account_id'. Please set it.");
+    return;
+  }
+
+  userAccountId = parseInt(userAccountId); // ✅ แปลงเป็นตัวเลข
+
+  console.log("📤 Sending Transfer Request:");
+  console.log("Amount:", amount.value);
+  console.log("Source Account ID:", userAccountId);
+  console.log("Target Account ID:", targetAccountId.value);
+
   try {
-    const token = localStorage.getItem("token");
-    const userAccountId = localStorage.getItem("account_id"); // ✅ ต้องมีบัญชีต้นทาง
-
     const response = await axios.post(
-    "/api/transfer", // ✅ แก้ให้ถูกต้อง
-    {
-      amount: parseFloat(amount.value),
-      source_account_id: userAccountId, // ✅ บัญชีต้นทาง
-      target_account_id: targetAccountId.value,
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+      "/api/transfer", // ✅ ใช้ route ที่ถูกต้อง
+      {
+        amount: parseFloat(amount.value),
+        source_account_id: userAccountId, // ✅ ส่งบัญชีต้นทาง
+        target_account_id: parseInt(targetAccountId.value),
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
+    console.log("✅ Transfer Success:", response.data);
     successMessage.value = response.data.message;
     setTimeout(closeModal, 1500);
   } catch (error) {
+    console.error("❌ Transfer Failed:", error.response?.data || error);
     errorMessage.value = error.response?.data?.error || "Transfer failed. Try again.";
   }
 };
+
 
 </script>
 
