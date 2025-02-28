@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use App\Models\BankAccount;
 use Illuminate\Support\Facades\Hash;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Illuminate\Database\QueryException;
@@ -35,6 +36,8 @@ class AuthController extends Controller
                 ], 422);
             }
 
+            \DB::beginTransaction(); //  เริ่ม Transaction
+
             // 🔹 3. สร้าง User ใหม่
             $user = User::create([
                 'userid' => trim($request->idcard), // ใช้ idcard เป็น userid
@@ -45,25 +48,39 @@ class AuthController extends Controller
                 'email' => trim($request->email),
                 'address' => trim($request->address),
                 'gender' => trim($request->gender),
-                'pin' => Hash::make(trim($request->pin)), // ✅ Hash ค่า PIN
+                'pin' => Hash::make(trim($request->pin)), //  Hash ค่า PIN
             ]);
 
-            // 🔹 4. ส่ง Response กลับ
+           
+            $account = BankAccount::create([
+                'account_id' => random_int(1000000, 9999999), //  สุ่มเลขบัญชี 7 หลัก
+                'user_id' => $user->userid, 
+                'balance' => 0, 
+                'interest' => 0 * 0.25, 
+            ]);
+
+            \DB::commit(); 
+
+            // 🔹 5. ส่ง Response กลับ
             return response()->json([
                 'message' => 'User registered successfully!',
-                'user' => $user
+                'user' => $user,
+                'bank_account' => $account
             ], 201);
 
         } catch (QueryException $e) {
+            \DB::rollBack(); 
             return response()->json([
                 'error' => 'Database Error: ' . $e->getMessage()
             ], 500);
         } catch (\Exception $e) {
+            \DB::rollBack();
             return response()->json([
                 'error' => 'Internal Server Error: ' . $e->getMessage()
             ], 500);
         }
     }
+
     public function login(Request $request)
     {
         // 🔹 ตรวจสอบข้อมูลที่ส่งมา

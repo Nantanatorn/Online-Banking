@@ -22,6 +22,12 @@ class BankAccount extends Model
         return $this->belongsTo(User::class, 'user_id', 'userid');
     }
 
+    // 🔹 ความสัมพันธ์กับธุรกรรม (บัญชี 1 บัญชีมีหลายธุรกรรม)
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'account_id', 'account_id');
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -36,4 +42,3 @@ class BankAccount extends Model
         });
     }
 }
-
