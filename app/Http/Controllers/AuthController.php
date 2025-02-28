@@ -10,6 +10,7 @@ use App\Models\BankAccount;
 use Illuminate\Support\Facades\Hash;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Illuminate\Database\QueryException;
+use Exception;
 
 class AuthController extends Controller
 {
@@ -83,33 +84,39 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // 🔹 ตรวจสอบข้อมูลที่ส่งมา
         $validator = Validator::make($request->all(), [
             'userid' => 'required|string|size:13',
             'pin' => 'required|string|min:4|max:6',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        // 🔹 ตรวจสอบข้อมูลและสร้าง Token
         $user = User::where('userid', $request->userid)->first();
 
         if (!$user || !Hash::check($request->pin, $user->pin)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $token = JWTAuth::fromUser($user);
+        try {
+            $token = JWTAuth::fromUser($user);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
+        }
 
         return response()->json([
             'message' => 'Login successful',
-            'token' => $token
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'firstname' => $user->firstname,
+                'lastname' => $user->lastname,
+            ]
         ]);
     }
+
+
 
     public function logout(Request $request)
     {
@@ -120,9 +127,18 @@ class AuthController extends Controller
     }
 
     public function getUser(Request $request)
-    {
-        // 🔹 ดึงข้อมูล User จาก Token
-        return response()->json(JWTAuth::parseToken()->authenticate());
+{
+    try {
+        $user = JWTAuth::parseToken()->authenticate();
+        return response()->json([
+            'id' => $user->id,
+            'firstname' => $user->firstname,
+            'lastname' => $user->lastname,
+            'email' => $user->email,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Invalid token'], 401);
     }
+}
 
 }

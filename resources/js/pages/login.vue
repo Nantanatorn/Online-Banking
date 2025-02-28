@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from "vue";
-import { Link } from "@inertiajs/vue3";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -9,25 +8,8 @@ const password = ref("");
 const errorMessage = ref(null);
 const loading = ref(false);
 
-// ✅ Function to allow only numbers (UserID: 13 digits, PIN: 4-6 digits)
-const validateUserID = () => {
-  username.value = username.value.replace(/\D/g, "").slice(0, 13);
-};
-const validatePIN = () => {
-  password.value = password.value.replace(/\D/g, "").slice(0, 6);
-};
-
 const handleSubmit = async () => {
   if (loading.value) return; // ✅ Prevent multiple clicks
-  if (username.value.length !== 13 || password.value.length < 4 || password.value.length > 6) {
-    Swal.fire({
-      title: "Invalid Input",
-      text: "UserID must be 13 digits and PIN must be 4-6 digits.",
-      icon: "warning",
-      confirmButtonText: "OK",
-    });
-    return;
-  }
 
   errorMessage.value = null;
   loading.value = true;
@@ -38,19 +20,29 @@ const handleSubmit = async () => {
       pin: password.value.trim(),
     });
 
-    Swal.fire({
-      title: "Login Successful!",
-      text: "Redirecting to Dashboard...",
-      icon: "success",
-      confirmButtonText: "OK",
-    }).then(() => {
-      window.location.href = "/dashboard"; // ✅ Redirect to Dashboard
-    });
+    console.log("Login Response:", data); // ✅ Debugging: Check API response
+
+    if (data.token) {
+      localStorage.setItem("token", data.token); // ✅ Store token in localStorage
+      console.log("Token saved:", localStorage.getItem("token")); // ✅ Debugging: Verify token storage
+
+      Swal.fire({
+        title: "Login Successful!",
+        text: "Redirecting to Dashboard...",
+        icon: "success",
+        confirmButtonText: "OK",
+      }).then(() => {
+        window.location.href = "/dashboard"; // ✅ Redirect after login
+      });
+    } else {
+      throw new Error("No token received from server.");
+    }
 
   } catch (error) {
-    errorMessage.value = error.response?.status === 401
-      ? "Incorrect UserID or PIN."
-      : "An error occurred. Please try again.";
+    errorMessage.value =
+      error.response?.data?.error === "Unauthorized"
+        ? "Incorrect UserID or PIN."
+        : "An error occurred. Please try again.";
 
     Swal.fire({
       title: "Login Failed",
@@ -58,10 +50,13 @@ const handleSubmit = async () => {
       icon: "error",
       confirmButtonText: "Try Again",
     });
+
+    console.error("Login error:", error.response ? error.response.data : error.message);
   } finally {
     loading.value = false;
   }
 };
+
 </script>
 
 <template>

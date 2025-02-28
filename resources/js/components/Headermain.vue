@@ -28,11 +28,13 @@ import { Link } from "@inertiajs/vue3";
       </nav>
 
       <!-- 🔹 Open Account Button -->
-      <Link href="/Uregister">
+
+      <Link href="/Ulogin">
         <button class="border border-teal-300 rounded-full font-bold px-8 py-2 bg-teal-400 text-white hover:bg-teal-300 hover:text-gray-900 transition duration-300 shadow-md">
-          Open Account
+          Sign in 
         </button>
       </Link>
+
       
     </div>
   </header>

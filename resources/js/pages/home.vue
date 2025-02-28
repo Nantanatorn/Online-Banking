@@ -1,7 +1,7 @@
 <script setup>
-import Headermain from "@/Components/Headermain.vue";
-import Swipercarousel from "@/Components/Swipercarousel.vue";
-import foot from "@/Components/foot.vue";
+import Headermain from "@/components/Headermain.vue";
+import Swipercarousel from "@/components/Swipercarousel.vue";
+import foot from "@/components/foot.vue";
 </script>
 
 <template>
@@ -9,7 +9,7 @@ import foot from "@/Components/foot.vue";
     <Headermain /> 
 
     <main class="p-6">
-      <!-- ✅ Swiper Carousel -->
+      
       <Swipercarousel />
 
       <section class="mt-8 bg-white/10 backdrop-blur-lg p-6 rounded-lg shadow-lg">
@@ -18,7 +18,7 @@ import foot from "@/Components/foot.vue";
           Explore our online banking services, including transaction limits and fees.
         </p>
 
-        <!-- ✅ Transaction Limits -->
+        
         <div class="mt-6 bg-white/20 p-6 rounded-lg shadow-md">
           <h3 class="text-2xl font-semibold text-white">Transaction Limits</h3>
           <ul class="mt-2 text-gray-300 space-y-2">
@@ -27,7 +27,7 @@ import foot from "@/Components/foot.vue";
           </ul>
         </div>
 
-        <!-- ✅ Service Channels -->
+       
         <div class="mt-6 bg-white/20 p-6 rounded-lg shadow-md">
           <h3 class="text-2xl font-semibold text-white">Service Channels</h3>
           <p class="mt-2 text-gray-300">
@@ -35,7 +35,7 @@ import foot from "@/Components/foot.vue";
           </p>
         </div>
 
-        <!-- ✅ No Fees Section -->
+        
         <div class="mt-6 bg-teal-700 p-6 rounded-lg shadow-md text-center">
           <h3 class="text-2xl font-semibold text-white">No Service Fees</h3>
           <p class="mt-2 text-gray-200 text-lg"> fee-free transactions with ChinoBank.</p>
@@ -43,5 +43,4 @@ import foot from "@/Components/foot.vue";
       </section>
     </main>
   </div>
-  <foot/>
 </template>
