@@ -16,6 +16,12 @@ class BankAccount extends Model
 
     protected $fillable = ['account_id', 'user_id', 'balance', 'interest'];
 
+    // ให้ตัวเลขเงินออกเป็นทศนิยม 2 ตำแหน่งสม่ำเสมอ (ไม่ใช่ string/float ปนกัน)
+    protected $casts = [
+        'balance' => 'decimal:2',
+        'interest' => 'decimal:2',
+    ];
+
     // 🔹 ความสัมพันธ์กับผู้ใช้ (บัญชี 1 บัญชี เป็นของผู้ใช้ 1 คน)
     public function user()
     {
@@ -34,6 +40,10 @@ class BankAccount extends Model
 
         // 🔹 กำหนดเลข `account_id` ให้เป็นเลขสุ่ม (7-9 หลัก)
         static::creating(function ($account) {
+            if (!empty($account->account_id)) {
+                return;
+            }
+
             do {
                 $random_id = random_int(1000000, 9999999); // สุ่มเลข 7 หลัก
             } while (BankAccount::where('account_id', $random_id)->exists());

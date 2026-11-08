@@ -33,10 +33,10 @@ const validatePIN = () => {
 
 const handleRegister = async () => {
   if (loading.value) return; // ✅ Prevent multiple clicks
-  if (form.value.idcard.length !== 13 || form.value.pin.length < 4 || form.value.pin.length > 6) {
+  if (form.value.idcard.length !== 13 || form.value.pin.length !== 6) {
     Swal.fire({
       title: "Invalid Input",
-      text: "ID Card must be 13 digits and PIN must be 4-6 digits.",
+      text: "ID Card must be 13 digits and PIN must be 6 digits.",
       icon: "warning",
       confirmButtonText: "OK",
     });
@@ -144,7 +144,7 @@ const handleRegister = async () => {
             </select>
           </div>
           <div>
-            <label class="block text-teal-200">PIN (4-6 digits)</label>
+            <label class="block text-teal-200">PIN (6 digits)</label>
             <input v-model="form.pin" @input="validatePIN" type="password" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required maxlength="6" />
           </div>
           <div>

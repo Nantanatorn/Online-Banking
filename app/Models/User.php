@@ -20,6 +20,11 @@ class User extends Authenticatable implements JWTSubject
         'userid', 'firstname', 'lastname', 'idcard', 'phone', 'email', 'address', 'gender', 'pin'
     ];
 
+    // ไม่ส่ง hash ของ PIN ออกไปใน JSON
+    protected $hidden = ['pin'];
+
+    protected $casts = ['transfer_limit_reset_at' => 'datetime'];
+
     // 🔹 ความสัมพันธ์กับบัญชีธนาคาร (1 User มีหลายบัญชี)
     public function bankAccounts()
     {

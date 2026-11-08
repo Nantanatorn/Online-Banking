@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { LayoutDashboard, ReceiptText, LogOut } from "lucide-vue-next";
+import { getToken, authHeaders, clearSession } from "@/composables/useAuth";
 
 // ✅ Sidebar state (เปิด-ปิด)
 const isSidebarOpen = ref(false);
@@ -27,8 +29,7 @@ const fetchUser = async () => {
       headers: { Authorization: `Bearer ${token}` } // ✅ ต้องใช้ ` ` ไม่ใช่ ${}
     });
 
-    console.log("User Data:", response.data);
-    userName.value = response.data.firstname + " " + response.data.lastname || "User";
+    userName.value = `${response.data.firstname} ${response.data.lastname}`.trim() || "User";
   } catch (error) {
     console.error("Error fetching user:", error.response ? error.response.data : error.message);
     userName.value = "Guest"; // ถ้า API ล้มเหลว ให้ใช้ "Guest"
@@ -38,21 +39,15 @@ const fetchUser = async () => {
 // ✅ ฟังก์ชัน Logout
 const logoutUser = async () => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("No token found for logout.");
-      return;
+    if (getToken()) {
+      await axios.post("/api/logout", {}, { headers: authHeaders() });
     }
-
-    await axios.post("/api/logout", {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    localStorage.removeItem("token"); // ลบ Token
-    console.log("User logged out successfully");
-    window.location.href = "/"; // กลับหน้า Login
   } catch (error) {
-    console.error("Logout failed:", error.response ? error.response.data : error.message);
+    // token หมดอายุ/เซิร์ฟเวอร์ล่ม ก็ยังต้องออกจากระบบฝั่งเบราว์เซอร์ได้
+    console.error("Logout request failed:", error.response ? error.response.data : error.message);
+  } finally {
+    clearSession();
+    window.location.href = "/";
   }
 };
 
@@ -61,7 +56,7 @@ onMounted(fetchUser);
 </script>
 
 <template>
-  <div class="flex h-screen">
+  <div class="sticky top-0 flex h-screen self-start">
     <!-- ✅ Sidebar (คลิกแล้วขยาย-ย่อได้) -->
     <nav
       @click="toggleSidebar"
@@ -78,13 +73,13 @@ onMounted(fetchUser);
       <ul class="mt-6 space-y-3">
         <li>
           <a href="/dashboard" class="flex items-center space-x-3 p-3 rounded-md hover:bg-teal-500 transition">
-            <i class="bi bi-house"></i>
+            <LayoutDashboard class="h-5 w-5 shrink-0" />
             <span v-if="isSidebarOpen">Dashboard</span>
           </a>
         </li>
         <li>
           <a href="/Tran" class="flex items-center space-x-3 p-3 rounded-md hover:bg-teal-500 transition">
-            <i class="bi bi-journal-check"></i>
+            <ReceiptText class="h-5 w-5 shrink-0" />
             <span v-if="isSidebarOpen">Transaction</span>
           </a>
         </li>
@@ -103,7 +98,7 @@ onMounted(fetchUser);
           class="flex items-center space-x-3 p-3 rounded-md hover:bg-red-500 transition"
           @click="logoutUser"
         >
-          <i class="bi bi-box-arrow-left"></i>
+          <LogOut class="h-5 w-5 shrink-0" />
           <span v-if="isSidebarOpen">Logout</span>
         </a>
       </div>

@@ -14,9 +14,25 @@ class Transaction extends Model
     public $incrementing = false; // ปิด Auto-Increment
     protected $keyType = 'string'; // ใช้ UUID เป็น Primary Key
 
+    // เก็บเวลาระดับไมโครวินาที ให้ประวัติเรียงถูกเมื่อทำหลายรายการในวินาทีเดียวกัน
+    protected $dateFormat = 'Y-m-d H:i:s.u';
+
     protected $fillable = [
-        'id', 'account_id', 'type', 'amount', 'to_account_id'
+        'id', 'account_id', 'type', 'amount', 'balance', 'to_account_id'
     ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'balance' => 'decimal:2',
+    ];
+
+    protected static function booted()
+    {
+        // ทุกธุรกรรมใหม่ (ฝาก/ถอน/โอน/รับ) สร้างแจ้งเตือนให้เจ้าของบัญชี
+        static::created(function (Transaction $transaction) {
+            \App\Services\TransactionNotifier::notify($transaction);
+        });
+    }
 
     // 🔹 ความสัมพันธ์กับบัญชีธนาคาร (ธุรกรรมแต่ละรายการเป็นของ 1 บัญชี)
     public function bankAccount()

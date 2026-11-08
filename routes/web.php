@@ -27,6 +27,3 @@ Route::get('/Tran', function () {
     return Inertia::render('Transaction');
 })->name('Tran');
 
-
-require __DIR__.'/api.php';
-

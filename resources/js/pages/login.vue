@@ -24,7 +24,13 @@ const handleSubmit = async () => {
 
     if (data.token) {
       localStorage.setItem("token", data.token); // ✅ Store token in localStorage
-      console.log("Token saved:", localStorage.getItem("token")); // ✅ Debugging: Verify token storage
+      // เก็บเลขบัญชีต้นทางไว้ใช้ตอนโอนเงิน (Tranbutton.vue อ่านค่านี้)
+      const accountId = data.user?.account_id;
+      if (accountId) {
+        localStorage.setItem("account_id", String(accountId));
+      } else {
+        localStorage.removeItem("account_id");
+      }
 
       Swal.fire({
         title: "Login Successful!",
