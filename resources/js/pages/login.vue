@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
-import Swal from "sweetalert2";
+import { toast, Toaster } from "vue-sonner";
+import { Link } from "@inertiajs/vue3";
+
 
 const username = ref("");
 const password = ref("");
@@ -32,14 +34,10 @@ const handleSubmit = async () => {
         localStorage.removeItem("account_id");
       }
 
-      Swal.fire({
-        title: "Login Successful!",
-        text: "Redirecting to Dashboard...",
-        icon: "success",
-        confirmButtonText: "OK",
-      }).then(() => {
+      toast.success("Login successful", { description: "Taking you to your dashboard..." });
+      setTimeout(() => {
         window.location.href = "/dashboard"; // ✅ Redirect after login
-      });
+      }, 900);
     } else {
       throw new Error("No token received from server.");
     }
@@ -50,12 +48,7 @@ const handleSubmit = async () => {
         ? "Incorrect UserID or PIN."
         : "An error occurred. Please try again.";
 
-    Swal.fire({
-      title: "Login Failed",
-      text: errorMessage.value,
-      icon: "error",
-      confirmButtonText: "Try Again",
-    });
+    toast.error("Login failed", { description: errorMessage.value });
 
     console.error("Login error:", error.response ? error.response.data : error.message);
   } finally {
@@ -66,63 +59,64 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="flex h-screen bg-gradient-to-br from-blue-900 to-teal-700 items-center justify-center">
-    <div class="w-full max-w-xs bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-lg">
-      <header class="flex flex-col items-center">
-        <img class="w-20 mb-4 drop-shadow-lg" src="/bank_2830289.png" alt="Bank Logo" />
-        <h2 class="text-lg font-semibold text-white">Welcome to Chino Bank</h2>
-      </header>
+  <!-- พื้นหลังฟ้าเขียวแบบเดิม + แผ่นฟอร์มสีขาวแบบสมุดบัญชี -->
+  <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-900 to-teal-700 px-4 py-10">
+    <Toaster position="top-right" rich-colors />
+    <div class="w-full max-w-sm">
+      <Link href="/" class="mb-6 flex items-center justify-center gap-3 text-white">
+        <img src="/bank_2830289.png" alt="" class="h-14 w-14 object-contain drop-shadow-lg" />
+        <span class="font-display text-2xl font-semibold">Chino Bank</span>
+      </Link>
 
-      <div v-if="errorMessage" class="bg-red-100 text-red-600 p-2 mb-4 rounded text-center">
-        {{ errorMessage }}
-      </div>
+      <div class="sheet p-6 shadow-xl">
+        <h1 class="font-display text-2xl font-semibold text-ink">Log in</h1>
+        <p class="mt-1 text-muted">Use your 13-digit user ID and 6-digit PIN.</p>
 
-      <form @submit.prevent="handleSubmit">
-        <div>
-          <label class="block mb-2 text-teal-200" for="username">UserID</label>
-          <input
-            v-model="username"
-            @input="validateUserID"
-            class="w-full p-2 mb-4 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition"
-            type="text"
-            name="username"
-            maxlength="13"
-            required
-          />
-        </div>
-        <div>
-          <label class="block mb-2 text-teal-200" for="password">PIN/Password</label>
-          <input
-            v-model="password"
-            @input="validatePIN"
-            class="w-full p-2 mb-4 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition"
-            type="password"
-            name="password"
-            maxlength="6"  
-            required
-          />
-        </div>
-        <div>
-          <button
-            type="submit"
-            class="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center shadow-md"
-            :disabled="loading"
-          >
-            <svg v-if="loading" class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <form @submit.prevent="handleSubmit" class="mt-5 space-y-4 text-ink">
+          <div>
+            <label for="username" class="mb-1 block text-sm font-medium">User ID</label>
+            <input
+              id="username"
+              v-model="username"
+              class="field"
+              type="text"
+              name="username"
+              inputmode="numeric"
+              autocomplete="username"
+              maxlength="13"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="password" class="mb-1 block text-sm font-medium">PIN</label>
+            <input
+              id="password"
+              v-model="password"
+              class="field"
+              type="password"
+              name="password"
+              inputmode="numeric"
+              autocomplete="current-password"
+              maxlength="6"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full" :disabled="loading">
+            <svg v-if="loading" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
             </svg>
-            <span v-if="!loading">Login</span>
+            <span>{{ loading ? "Logging in..." : "Log in" }}</span>
           </button>
-        </div>
-      </form>
+        </form>
 
-      <footer class="flex justify-between text-sm mt-4 text-teal-200">
-        <a class="hover:text-teal-100" href="#">Forgot Password?</a>
-        <Link class="hover:text-teal-100" href="/Uregister">
-          Create an Account
-        </Link>
-      </footer>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <a class="text-muted hover:text-ink hover:underline" href="#">Forgot Password?</a>
+          <Link class="font-medium text-bank hover:underline" href="/Uregister">Create an account</Link>
+        </div>
+      </div>
     </div>
   </div>
 </template>

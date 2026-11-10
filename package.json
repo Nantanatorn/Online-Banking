@@ -26,6 +26,8 @@
         "vue-tsc": "^2.2.4"
     },
     "dependencies": {
+        "@fontsource/prompt": "^5.3.0",
+        "@fontsource/sarabun": "^5.3.0",
         "@headlessui/vue": "^1.7.23",
         "@inertiajs/vue3": "^2.0.0-beta.3",
         "@tailwindcss/forms": "^0.5.3",
@@ -44,13 +46,13 @@
         "lucide": "^0.468.0",
         "lucide-vue-next": "^0.468.0",
         "radix-vue": "^1.9.11",
-        "sweetalert2": "^11.17.2",
         "swiper": "^11.2.4",
         "tailwind-merge": "^2.5.5",
         "tailwindcss-animate": "^1.0.7",
         "typescript": "^5.2.2",
         "vite": "^6.2.0",
         "vue": "^3.5.13",
+        "vue-sonner": "^2.0.9",
         "ziggy-js": "^2.4.2"
     },
     "optionalDependencies": {

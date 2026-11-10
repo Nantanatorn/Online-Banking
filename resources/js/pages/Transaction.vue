@@ -6,6 +6,7 @@ import Tranbutton from "@/components/Tranbutton.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
 import ReceiptModal from "@/components/ReceiptModal.vue";
 import HistoryFilters from "@/components/HistoryFilters.vue";
+import Ledger from "@/components/Ledger.vue";
 import HistoryPagination from "@/components/HistoryPagination.vue";
 import { useTransactionHistory } from "@/composables/useTransactionHistory";
 import foot from "@/components/foot.vue";
@@ -85,7 +86,7 @@ const renderPieChart = () => {
         datasets: [
           {
             data: [depositTotal.value, withdrawTotal.value, transferTotal.value, receiveTotal.value],
-            backgroundColor: ["#4CAF50", "#FF5733", "#3498db", "#9b59b6"], // 🟢🟥🔵
+            backgroundColor: ["#1c8c5e", "#c23b3b", "#e39a9a", "#8ccfae"], // เงินเข้า = เขียว / เงินออก = แดง
             hoverOffset: 4,
           },
         ],
@@ -93,6 +94,7 @@ const renderPieChart = () => {
       options: {
         responsive: true,
         maintainAspectRatio: false, // ✅ ป้องกันไม่ให้กราฟหายไป
+        plugins: { legend: { display: false } }, // ใช้รายการยอดข้างกราฟเป็นคำอธิบายแทน
       },
     });
   }, 500);
@@ -124,72 +126,57 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-gradient-to-br from-blue-900 to-teal-700 text-white">
-    <!-- ✅ Sidebar -->
+  <div class="min-h-screen bg-paper text-ink md:flex">
     <Accsidebar @click="toggleSidebar" />
 
-    <!-- ✅ Main Content -->
-    <div class="flex-1 p-6">
-      <!-- 🔹 Header -->
-      <div class="flex justify-between items-center bg-white text-blue-900 p-4 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold">Transaction Dashboard</h1>
-        <div class="flex items-center space-x-4">
+    <main class="min-w-0 flex-1 space-y-8 px-4 py-6 max-md:pb-24 md:px-10 md:py-8">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="font-display text-2xl font-semibold md:text-3xl">Transactions</h1>
+        <div class="flex flex-wrap items-center gap-3">
           <NotificationBell ref="bell" @new-activity="refreshAll" />
           <Tranbutton @done="refreshAll" />
         </div>
-      </div>
+      </header>
 
-      <!-- 🔹 Pie Chart -->
-      <div class="bg-white p-6 rounded-lg shadow-md mt-6 text-blue-900">
-        <h2 class="text-2xl font-semibold mb-4">Transaction Overview</h2>
-        <div class="w-64 h-64 mx-auto">
-          <canvas id="transactionPieChart"></canvas>
+      <!-- สรุปยอด (ตามตัวกรองที่เลือก) -->
+      <section class="sheet p-5 md:p-6" aria-labelledby="overview-title">
+        <h2 id="overview-title" class="font-display text-xl font-semibold">Overview</h2>
+        <div class="mt-4 flex flex-wrap items-center gap-8">
+          <div class="h-56 w-56 shrink-0">
+            <canvas id="transactionPieChart" role="img" aria-label="Pie chart of deposits, received, withdrawals and transfers"></canvas>
+          </div>
+
+          <dl class="min-w-0 flex-1 basis-64 divide-y divide-rule">
+            <div class="flex items-center justify-between gap-4 py-2.5">
+              <dt class="flex items-center gap-2"><span class="h-3 w-3 rounded-sm" style="background: #1c8c5e"></span> Deposits</dt>
+              <dd class="font-display font-medium text-credit">฿{{ formatMoney(depositTotal) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-2.5">
+              <dt class="flex items-center gap-2"><span class="h-3 w-3 rounded-sm" style="background: #8ccfae"></span> Received</dt>
+              <dd class="font-display font-medium text-credit">฿{{ formatMoney(receiveTotal) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-2.5">
+              <dt class="flex items-center gap-2"><span class="h-3 w-3 rounded-sm" style="background: #c23b3b"></span> Withdrawals</dt>
+              <dd class="font-display font-medium text-debit">฿{{ formatMoney(withdrawTotal) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-2.5">
+              <dt class="flex items-center gap-2"><span class="h-3 w-3 rounded-sm" style="background: #e39a9a"></span> Transfers</dt>
+              <dd class="font-display font-medium text-debit">฿{{ formatMoney(transferTotal) }}</dd>
+            </div>
+          </dl>
         </div>
-      </div>
+      </section>
 
-      <!-- 🔹 Transaction History -->
-      <div class="bg-white p-6 rounded-lg shadow-md mt-6 text-blue-900">
-        <h2 class="text-2xl font-semibold mb-4">Transaction History</h2>
-        <HistoryFilters :filters="filters" :has-filters="hasFilters" :error="filterError" @change="onFilterChange" @clear="onClearFilters" />
-        <table class="w-full border-collapse border border-gray-300 text-sm">
-          <thead>
-            <tr class="bg-blue-200 text-blue-900">
-              <th class="p-2 border border-gray-300">Date</th>
-              <th class="p-2 border border-gray-300">Account ID</th>
-              <th class="p-2 border border-gray-300">Type</th>
-              <th class="p-2 border border-gray-300">Amount</th>
-              <th class="p-2 border border-gray-300">Balance</th>
-              <th class="p-2 border border-gray-300">Receipt</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!transactions.length">
-              <td colspan="6" class="p-6 text-center text-gray-500">
-                {{ hasFilters ? "No transactions match your filters." : "No transactions yet." }}
-              </td>
-            </tr>
-            <tr v-for="transaction in transactions" :key="transaction.id" class="text-center">
-              <td class="p-2 border border-gray-300">{{ formatDate(transaction.created_at) }}</td>
-              <td class="p-2 border border-gray-300">{{ transaction.account_id }}</td>
-              <td class="p-2 border border-gray-300 capitalize">
-                <span v-if="transaction.type === 'deposit'" class="text-green-500 font-semibold">Deposit</span>
-                <span v-else-if="transaction.type === 'withdraw'" class="text-red-500 font-semibold">Withdraw</span>
-                <span v-else-if="transaction.type === 'transfer'" class="text-blue-500 font-semibold">Transfer</span>
-                <span v-else-if="transaction.type === 'receive'" class="text-purple-500 font-semibold">Receive</span>
-              </td>
-              <td class="p-2 border border-gray-300" :class="isIncoming(transaction.type) ? 'text-green-500' : 'text-red-500'">
-                {{ isIncoming(transaction.type) ? "+" : "-" }}฿{{ formatMoney(transaction.amount) }}
-              </td>
-              <td class="p-2 border border-gray-300 font-bold">{{ transaction.balance == null ? "-" : "฿" + formatMoney(transaction.balance) }}</td>
-              <td class="p-2 border border-gray-300">
-                <button @click="receiptId = transaction.id" class="text-blue-600 hover:underline text-sm font-semibold">View</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <HistoryPagination :pagination="pagination" :loading="historyLoading" @page="onPage" />
-      </div>
-    </div>
+      <!-- ประวัติธุรกรรม (หน้าสมุดบัญชี) -->
+      <section class="passbook" aria-labelledby="history-title">
+        <div class="passbook-page">
+          <h2 id="history-title" class="mb-4 font-display text-xl font-semibold">Transaction history</h2>
+          <HistoryFilters :filters="filters" :has-filters="hasFilters" :error="filterError" @change="onFilterChange" @clear="onClearFilters" />
+          <Ledger :transactions="transactions" :has-filters="hasFilters" @view-receipt="receiptId = $event" />
+          <HistoryPagination :pagination="pagination" :loading="historyLoading" @page="onPage" />
+        </div>
+      </section>
+    </main>
   </div>
 
   <ReceiptModal v-if="receiptId" :transaction-id="receiptId" @close="receiptId = null" />

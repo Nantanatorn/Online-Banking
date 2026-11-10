@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import axios from "axios";
-import { Bell } from "lucide-vue-next";
+import { Bell, ArrowDownLeft, ArrowUpRight } from "lucide-vue-next";
 import { authHeaders, handleAuthError, getToken } from "@/composables/useAuth";
 import { format } from "date-fns";
 
@@ -47,7 +47,8 @@ const toggle = () => {
 
 const formatDate = (value) => format(new Date(value), "yyyy-MM-dd HH:mm");
 
-const iconFor = (type) => ({ deposit: "💰", withdraw: "💸", transfer: "📤", receive: "📥" }[type] || "🔔");
+// เงินเข้า = ลูกศรลงสีเขียว / เงินออก = ลูกศรขึ้นสีแดง
+const isIn = (type) => type === "deposit" || type === "receive";
 
 // ปิด dropdown เมื่อคลิกนอกกล่อง
 const root = ref(null);
@@ -81,14 +82,16 @@ defineExpose({ refresh });
 <template>
   <div ref="root" class="relative">
     <button
+      type="button"
       @click="toggle"
-      class="relative p-2 rounded-full text-blue-900 hover:bg-blue-50 transition"
-      title="Notifications"
+      class="btn btn-quiet relative !p-2"
+      :aria-label="unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'"
+      :aria-expanded="isOpen"
     >
-      <Bell class="h-6 w-6" />
+      <Bell class="h-5 w-5" />
       <span
         v-if="unreadCount"
-        class="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center"
+        class="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-bank px-1 text-xs font-semibold text-white"
       >
         {{ unreadCount > 9 ? "9+" : unreadCount }}
       </span>
@@ -96,29 +99,33 @@ defineExpose({ refresh });
 
     <div
       v-if="isOpen"
-      class="absolute right-0 mt-2 w-80 max-w-[90vw] bg-white text-gray-800 rounded-lg shadow-xl border z-40"
+      class="absolute right-0 z-40 mt-2 w-80 max-w-[90vw] rounded-md border border-rule bg-sheet text-ink shadow-lg"
+      style="animation: panel-in 0.14s ease-out"
     >
-      <div class="flex items-center justify-between px-4 py-3 border-b">
-        <h3 class="font-semibold">Notifications</h3>
-        <button v-if="unreadCount" @click="markAllRead" class="text-xs text-blue-600 hover:underline">
+      <div class="flex items-center justify-between border-b border-rule px-4 py-3">
+        <h3 class="font-display font-semibold">Notifications</h3>
+        <button v-if="unreadCount" type="button" @click="markAllRead" class="text-sm font-medium text-bank hover:underline">
           Mark all as read
         </button>
       </div>
 
-      <p v-if="!notifications.length" class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet.</p>
+      <p v-if="!notifications.length" class="px-4 py-8 text-center text-sm text-muted">
+        Nothing yet. You'll see deposits, withdrawals, and transfers here.
+      </p>
 
-      <ul v-else class="max-h-96 overflow-y-auto divide-y">
-        <li
-          v-for="n in notifications"
-          :key="n.id"
-          class="px-4 py-3 text-sm flex space-x-3"
-          :class="n.read_at ? '' : 'bg-blue-50'"
-        >
-          <span class="text-xl">{{ iconFor(n.type) }}</span>
-          <div class="flex-1">
-            <p class="font-semibold">{{ n.title }}</p>
-            <p class="text-gray-600">{{ n.message }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ formatDate(n.created_at) }}</p>
+      <ul v-else class="max-h-96 divide-y divide-rule overflow-y-auto">
+        <li v-for="n in notifications" :key="n.id" class="flex gap-3 px-4 py-3 text-sm" :class="n.read_at ? '' : 'bg-paper'">
+          <span
+            class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+            :class="isIn(n.type) ? 'bg-credit/10 text-credit' : 'bg-debit/10 text-debit'"
+          >
+            <ArrowDownLeft v-if="isIn(n.type)" class="h-4 w-4" />
+            <ArrowUpRight v-else class="h-4 w-4" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="font-medium">{{ n.title }}</p>
+            <p class="text-muted">{{ n.message }}</p>
+            <p class="mt-1 text-xs text-muted">{{ formatDate(n.created_at) }}</p>
           </div>
         </li>
       </ul>

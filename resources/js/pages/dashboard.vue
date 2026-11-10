@@ -6,6 +6,8 @@ import Tranbutton from "@/components/Tranbutton.vue";
 import NotificationBell from "@/components/NotificationBell.vue";
 import ReceiptModal from "@/components/ReceiptModal.vue";
 import HistoryFilters from "@/components/HistoryFilters.vue";
+import Ledger from "@/components/Ledger.vue";
+import { Star, X } from "lucide-vue-next";
 import HistoryPagination from "@/components/HistoryPagination.vue";
 import { useTransactionHistory } from "@/composables/useTransactionHistory";
 import foot from "@/components/foot.vue";
@@ -98,119 +100,83 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-gradient-to-br from-blue-900 to-teal-700 text-white">
-    <!-- ✅ Sidebar -->
+  <div class="min-h-screen bg-paper text-ink md:flex">
     <Accsidebar @click="toggleSidebar" />
 
-    <!-- ✅ Main Content -->
-    <div class="flex-1 p-6 space-y-6">
-      
-      <!-- 🔹 Header -->
-      <div class="flex justify-between items-center bg-white text-blue-900 p-5 rounded-xl shadow-lg">
-        <h1 class="text-3xl font-bold">🏦 Bank Dashboard</h1>
-        <div class="flex items-center space-x-4">
+    <main class="min-w-0 flex-1 space-y-8 px-4 py-6 max-md:pb-24 md:px-10 md:py-8">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="font-display text-2xl font-semibold md:text-3xl">Dashboard</h1>
+        <div class="flex flex-wrap items-center gap-3">
           <NotificationBell ref="bell" @new-activity="refreshAll" />
           <Tranbutton ref="tranButton" @done="refreshAll" />
         </div>
-      </div>
+      </header>
 
-      <!-- 🔹 Account Details -->
-      <div class="bg-white p-6 rounded-xl shadow-lg text-blue-900">
-        <h2 class="text-2xl font-semibold mb-4">💳 Bank Accounts</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          <div v-for="account in bankAccounts" :key="account.account_id" class="bg-gray-100 p-6 rounded-lg shadow-md text-center">
-            <h3 class="text-lg font-semibold">Account Name</h3>
-            <p class="text-xl font-bold text-gray-700">{{ userName }}</p>
+      <!-- บัญชี + บัญชีที่บันทึกไว้ -->
+      <section class="grid gap-6 lg:grid-cols-5" aria-label="Accounts">
+        <article v-for="account in bankAccounts" :key="account.account_id" class="passbook lg:col-span-3">
+          <div class="passbook-page">
+            <h2 class="font-display text-xl font-semibold">{{ userName }}</h2>
+            <p class="text-muted">Account {{ account.account_id }}</p>
 
-            <h3 class="text-lg font-semibold mt-3">Account ID</h3>
-            <p class="text-xl font-bold text-gray-700">{{ account.account_id }}</p>
-
-            <h3 class="text-lg font-semibold mt-3">Balance</h3>
-            <p class="text-2xl font-bold text-green-600">฿{{ formatMoney(account.balance) }}</p>
-
-            <h3 class="text-lg font-semibold mt-3">Interest</h3>
-            <p class="text-2xl font-bold text-blue-500">{{ account.interest }}%</p>
+            <div class="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-t-2 border-ink pt-4">
+              <span class="text-muted">Balance</span>
+              <span class="break-all font-display text-3xl font-semibold md:text-4xl">฿{{ formatMoney(account.balance) }}</span>
+            </div>
+            <p class="mt-3 text-sm text-muted">Interest rate {{ account.interest }}%</p>
           </div>
+        </article>
 
-          <!-- ⭐ Saved Accounts -->
-          <div class="bg-gray-100 p-6 rounded-lg shadow-md lg:col-span-2">
-            <h3 class="text-lg font-semibold mb-1">⭐ Saved Accounts</h3>
-            <p v-if="savedAccounts.length" class="text-xs text-gray-500 mb-3">Click an account to transfer to it</p>
-            <p v-if="!savedAccounts.length" class="text-gray-500 text-sm">
-              No saved accounts yet. Tick "Save this account" when you transfer.
-            </p>
-            <ul v-else class="space-y-2 max-h-72 overflow-y-auto">
-              <li
-                v-for="a in savedAccounts"
-                :key="a.id"
-                @click="tranButton?.openTransferTo(a.account_id)"
-                class="flex items-center justify-between bg-white rounded-lg px-4 py-2 shadow-sm cursor-pointer hover:bg-blue-50 hover:shadow-md transition"
-                title="Click to transfer"
-              >
-                <div>
-                  <p class="font-semibold text-gray-800">{{ a.nickname || a.holder_name || "Account" }}</p>
-                  <p class="text-sm text-gray-500">
-                    {{ a.account_id }}<span v-if="a.nickname && a.holder_name"> · {{ a.holder_name }}</span>
-                  </p>
-                </div>
-                <div class="flex items-center space-x-3">
-                  <span class="text-sm font-semibold text-blue-500">Transfer →</span>
-                  <button @click.stop="removeSavedAccount(a.id)" class="text-gray-400 hover:text-red-500 transition" title="Remove">✖</button>
-                </div>
+        <aside class="sheet p-5 lg:col-span-2" aria-labelledby="saved-title">
+          <h2 id="saved-title" class="flex items-center gap-2 font-display text-lg font-semibold">
+            <Star class="h-5 w-5" /> Saved accounts
+          </h2>
+
+          <p v-if="!savedAccounts.length" class="mt-3 text-sm text-muted">
+            No saved accounts yet. Tick "Save this account" the next time you transfer and it will show up here.
+          </p>
+
+          <template v-else>
+            <p class="mt-1 text-sm text-muted">Select an account to start a transfer.</p>
+            <ul class="mt-3 max-h-72 overflow-y-auto">
+              <li v-for="a in savedAccounts" :key="a.id" class="flex items-center gap-1 border-b border-rule last:border-0">
+                <button
+                  type="button"
+                  @click="tranButton?.openTransferTo(a.account_id)"
+                  class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md px-2 py-3 text-left hover:bg-paper"
+                >
+                  <span class="min-w-0">
+                    <span class="block truncate font-medium">{{ a.nickname || a.holder_name || "Account" }}</span>
+                    <span class="block truncate text-sm text-muted">
+                      {{ a.account_id }}<span v-if="a.nickname && a.holder_name"> · {{ a.holder_name }}</span>
+                    </span>
+                  </span>
+                  <span class="shrink-0 text-sm font-medium text-bank">Transfer</span>
+                </button>
+                <button
+                  type="button"
+                  @click="removeSavedAccount(a.id)"
+                  class="rounded-md p-2 text-muted hover:bg-paper hover:text-debit"
+                  :aria-label="'Remove ' + (a.nickname || a.holder_name || a.account_id) + ' from saved accounts'"
+                >
+                  <X class="h-4 w-4" />
+                </button>
               </li>
             </ul>
-          </div>
+          </template>
+        </aside>
+      </section>
 
+      <!-- ประวัติธุรกรรม (หน้าสมุดบัญชี) -->
+      <section class="passbook" aria-labelledby="history-title">
+        <div class="passbook-page">
+          <h2 id="history-title" class="mb-4 font-display text-xl font-semibold">Transaction history</h2>
+          <HistoryFilters :filters="filters" :has-filters="hasFilters" :error="filterError" @change="applyFilters" @clear="clearFilters" />
+          <Ledger :transactions="transactions" :has-filters="hasFilters" @view-receipt="receiptId = $event" />
+          <HistoryPagination :pagination="pagination" :loading="historyLoading" @page="goToPage" />
         </div>
-      </div>
-
-      <!-- 🔹 Transaction History -->
-      <div class="bg-white p-6 rounded-xl shadow-lg text-blue-900">
-        <h2 class="text-2xl font-semibold mb-4">📜 Transaction History</h2>
-        <HistoryFilters :filters="filters" :has-filters="hasFilters" :error="filterError" @change="applyFilters" @clear="clearFilters" />
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse rounded-lg overflow-hidden">
-            <thead>
-              <tr class="bg-blue-500 text-white">
-                <th class="p-3 text-left">📅 Date</th>
-                <th class="p-3 text-left">🔢 Account ID</th>
-                <th class="p-3 text-left">💰 Type</th>
-                <th class="p-3 text-right">💲 Amount</th>
-                <th class="p-3 text-right">💼 Balance</th>
-                <th class="p-3 text-center">🧾 Receipt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="!transactions.length">
-                <td colspan="6" class="p-6 text-center text-gray-500">
-                  {{ hasFilters ? "No transactions match your filters." : "No transactions yet." }}
-                </td>
-              </tr>
-              <tr v-for="transaction in transactions" :key="transaction.id" class="border-b hover:bg-gray-100">
-                <td class="p-3">{{ formatDate(transaction.created_at) }}</td>
-                <td class="p-3">{{ transaction.account_id }}</td>
-                <td class="p-3 capitalize">
-                  <span v-if="transaction.type === 'deposit'" class="text-green-600 font-semibold">Deposit</span>
-                  <span v-else-if="transaction.type === 'withdraw'" class="text-red-600 font-semibold">Withdraw</span>
-                  <span v-else-if="transaction.type === 'transfer'" class="text-blue-600 font-semibold">Transfer</span>
-                  <span v-else-if="transaction.type === 'receive'" class="text-purple-600 font-semibold">Receive</span>
-                </td>
-                <td class="p-3 text-right font-bold" :class="isIncoming(transaction.type) ? 'text-green-500' : 'text-red-500'">
-                  {{ isIncoming(transaction.type) ? "+" : "-" }}฿{{ formatMoney(transaction.amount) }}
-                </td>
-                <td class="p-3 text-right font-bold">{{ transaction.balance == null ? "-" : "฿" + formatMoney(transaction.balance) }}</td>
-                <td class="p-3 text-center">
-                  <button @click="receiptId = transaction.id" class="text-blue-600 hover:underline text-sm font-semibold">View</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <HistoryPagination :pagination="pagination" :loading="historyLoading" @page="goToPage" />
-      </div>
-
-    </div>
+      </section>
+    </main>
   </div>
 
   <ReceiptModal v-if="receiptId" :transaction-id="receiptId" @close="receiptId = null" />

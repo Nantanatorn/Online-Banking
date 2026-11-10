@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local tooling (AI agent skills)
+/.agents
+/skills-lock.json

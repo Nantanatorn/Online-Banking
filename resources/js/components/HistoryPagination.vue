@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from "vue";
+import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 const props = defineProps({
   pagination: { type: Object, required: true },
@@ -37,37 +38,31 @@ const go = (page) => {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600">
+  <div class="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
     <p>{{ rangeText }}</p>
 
-    <nav v-if="last > 1" class="flex items-center space-x-1">
-      <button
-        @click="go(current - 1)"
-        :disabled="current === 1 || loading"
-        class="px-3 py-1 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        ‹ Prev
+    <nav v-if="last > 1" class="flex items-center gap-1" aria-label="Transaction pages">
+      <button type="button" @click="go(current - 1)" :disabled="current === 1 || loading" class="btn btn-quiet !px-2 !py-1" aria-label="Previous page">
+        <ChevronLeft class="h-4 w-4" />
       </button>
 
       <template v-for="p in pages" :key="p">
         <span v-if="typeof p === 'string'" class="px-1">…</span>
         <button
           v-else
+          type="button"
           @click="go(p)"
           :disabled="loading"
-          class="min-w-8 px-2 py-1 rounded-lg border transition"
-          :class="p === current ? 'bg-blue-600 border-blue-600 text-white font-semibold' : 'bg-white hover:bg-gray-100'"
+          :aria-current="p === current ? 'page' : undefined"
+          class="btn min-w-9 !px-2 !py-1"
+          :class="p === current ? 'bg-ink text-white' : 'btn-quiet'"
         >
           {{ p }}
         </button>
       </template>
 
-      <button
-        @click="go(current + 1)"
-        :disabled="current === last || loading"
-        class="px-3 py-1 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Next ›
+      <button type="button" @click="go(current + 1)" :disabled="current === last || loading" class="btn btn-quiet !px-2 !py-1" aria-label="Next page">
+        <ChevronRight class="h-4 w-4" />
       </button>
     </nav>
   </div>

@@ -2,7 +2,8 @@
 import { ref } from "vue";
 import { Link } from "@inertiajs/vue3";
 import axios from "axios";
-import Swal from "sweetalert2";
+import { toast, Toaster } from "vue-sonner";
+import AuthShell from "@/components/AuthShell.vue";
 
 const form = ref({
   firstname: "",
@@ -34,22 +35,12 @@ const validatePIN = () => {
 const handleRegister = async () => {
   if (loading.value) return; // ✅ Prevent multiple clicks
   if (form.value.idcard.length !== 13 || form.value.pin.length !== 6) {
-    Swal.fire({
-      title: "Invalid Input",
-      text: "ID Card must be 13 digits and PIN must be 6 digits.",
-      icon: "warning",
-      confirmButtonText: "OK",
-    });
+    toast.warning("Invalid input", { description: "ID card must be 13 digits and PIN must be 6 digits." });
     return;
   }
   
   if (form.value.pin !== form.value.confirmPin) {
-    Swal.fire({
-      title: "PIN Mismatch",
-      text: "PIN and Confirm PIN must be the same.",
-      icon: "error",
-      confirmButtonText: "OK",
-    });
+    toast.error("PINs do not match", { description: "PIN and Confirm PIN must be the same." });
     return;
   }
 
@@ -68,14 +59,10 @@ const handleRegister = async () => {
       pin: form.value.pin.trim(),
     });
 
-    Swal.fire({
-      title: "Registration Successful!",
-      text: "Your account has been created.",
-      icon: "success",
-      confirmButtonText: "OK",
-    }).then(() => {
+    toast.success("Account created", { description: "Taking you to the login page..." });
+    setTimeout(() => {
       window.location.href = "/Ulogin"; // ✅ Redirect to Login Page
-    });
+    }, 1200);
 
   } catch (error) {
     const errors = error.response?.data?.errors;
@@ -85,12 +72,7 @@ const handleRegister = async () => {
       errorMessage.value = "An error occurred. Please try again.";
     }
 
-    Swal.fire({
-      title: "Registration Failed",
-      text: errorMessage.value,
-      icon: "error",
-      confirmButtonText: "Try Again",
-    });
+    toast.error("Registration failed", { description: errorMessage.value });
   } finally {
     loading.value = false;
   }
@@ -98,69 +80,62 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="flex h-screen bg-gradient-to-br from-blue-900 to-teal-700 items-center justify-center">
-    <div class="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-lg">
-      <header class="flex flex-col items-center">
-        <img class="w-20 mb-4 drop-shadow-lg" src="/bank_2830289.png" alt="Bank Logo" />
-        <h2 class="text-lg font-semibold text-white">Open a New Account</h2>
-      </header>
+  <AuthShell wide>
+    <Toaster position="top-right" rich-colors />
+    <h1 class="font-display text-3xl font-semibold">Open an account</h1>
+    <p class="mt-2 text-muted">Fill in your details to get a Chino Bank account.</p>
 
-      <div v-if="errorMessage" class="bg-red-100 text-red-600 p-2 mb-4 rounded text-center">
-        {{ errorMessage }}
+    <form @submit.prevent="handleRegister" class="mt-6">
+      <div class="grid gap-x-4 gap-y-4 sm:grid-cols-2">
+        <div>
+          <label for="firstname" class="mb-1 block text-sm font-medium">First name</label>
+          <input id="firstname" v-model="form.firstname" type="text" autocomplete="given-name" class="field" required />
+        </div>
+        <div>
+          <label for="lastname" class="mb-1 block text-sm font-medium">Last name</label>
+          <input id="lastname" v-model="form.lastname" type="text" autocomplete="family-name" class="field" required />
+        </div>
+        <div>
+          <label for="idcard" class="mb-1 block text-sm font-medium">ID card number (13 digits)</label>
+          <input id="idcard" v-model="form.idcard" @input="validateIDCard" type="text" inputmode="numeric" class="field" required maxlength="13" />
+        </div>
+        <div>
+          <label for="phone" class="mb-1 block text-sm font-medium">Phone</label>
+          <input id="phone" v-model="form.phone" @input="validatePhone" type="text" inputmode="tel" autocomplete="tel" class="field" required maxlength="15" />
+        </div>
+        <div>
+          <label for="email" class="mb-1 block text-sm font-medium">Email</label>
+          <input id="email" v-model="form.email" type="email" autocomplete="email" class="field" required />
+        </div>
+        <div>
+          <label for="gender" class="mb-1 block text-sm font-medium">Gender</label>
+          <select id="gender" v-model="form.gender" class="field">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="address" class="mb-1 block text-sm font-medium">Address</label>
+          <textarea id="address" v-model="form.address" rows="2" autocomplete="street-address" class="field" required></textarea>
+        </div>
+        <div>
+          <label for="pin" class="mb-1 block text-sm font-medium">PIN (6 digits)</label>
+          <input id="pin" v-model="form.pin" @input="validatePIN" type="password" inputmode="numeric" autocomplete="new-password" class="field" required maxlength="6" />
+        </div>
+        <div>
+          <label for="confirm-pin" class="mb-1 block text-sm font-medium">Confirm PIN</label>
+          <input id="confirm-pin" v-model="form.confirmPin" @input="validatePIN" type="password" inputmode="numeric" autocomplete="new-password" class="field" required maxlength="6" />
+        </div>
       </div>
 
-      <form @submit.prevent="handleRegister">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-teal-200">First Name</label>
-            <input v-model="form.firstname" type="text" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required />
-          </div>
-          <div>
-            <label class="block text-teal-200">Last Name</label>
-            <input v-model="form.lastname" type="text" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required />
-          </div>
-          <div>
-            <label class="block text-teal-200">ID Card</label>
-            <input v-model="form.idcard" @input="validateIDCard" type="text" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required maxlength="13" />
-          </div>
-          <div>
-            <label class="block text-teal-200">Phone</label>
-            <input v-model="form.phone" @input="validatePhone" type="text" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required maxlength="15" />
-          </div>
-          <div>
-            <label class="block text-teal-200">Email</label>
-            <input v-model="form.email" type="email" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required />
-          </div>
-          <div>
-            <label class="block text-teal-200">Address</label>
-            <textarea v-model="form.address" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required></textarea>
-          </div>
-          <div>
-            <label class="block text-teal-200">Gender</label>
-            <select v-model="form.gender" class="w-full p-2 bg-white/20 text-white border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition">
-              <option value="male" class="text-black">Male</option>
-              <option value="female" class="text-black">Female</option>
-              <option value="other" class="text-black">Other</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-teal-200">PIN (6 digits)</label>
-            <input v-model="form.pin" @input="validatePIN" type="password" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required maxlength="6" />
-          </div>
-          <div>
-            <label class="block text-teal-200">Confirm PIN</label>
-            <input v-model="form.confirmPin" @input="validatePIN" type="password" class="w-full p-2 bg-white/20 text-white placeholder-gray-300 border-b-2 border-teal-300 outline-none focus:bg-white/30 rounded-md transition" required maxlength="6" />
-          </div>
-        </div>
+      <button type="submit" class="btn btn-primary mt-6 w-full" :disabled="loading">
+        {{ loading ? "Creating account..." : "Create account" }}
+      </button>
+    </form>
 
-        <button type="submit" class="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold py-2 px-4 mt-4 rounded-lg transition duration-300 shadow-md flex items-center justify-center" :disabled="loading">
-          <span v-if="!loading">Register</span>
-        </button>
-      </form>
-
-      <footer class="text-center mt-4 text-teal-200">
-        <p>Already have an account? <Link href="/Ulogin" class="hover:text-teal-100">Login</Link></p>
-      </footer>
-    </div>
-  </div>
+    <p class="mt-6 text-sm text-muted">
+      Already have an account? <Link href="/Ulogin" class="font-medium text-bank hover:underline">Log in</Link>
+    </p>
+  </AuthShell>
 </template>

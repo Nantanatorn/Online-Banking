@@ -1,6 +1,256 @@
 @import "tailwindcss/utilities";
 @import "tailwindcss";
 
+/* ฟอนต์ฝังในโปรเจกต์ (ไม่พึ่ง CDN): Prompt = หัวข้อ/ตัวเลขเงิน, Sarabun = เนื้อหา/ตาราง (รองรับภาษาไทย) */
+@import "@fontsource/prompt/latin-500.css";
+@import "@fontsource/prompt/latin-600.css";
+@import "@fontsource/prompt/latin-700.css";
+@import "@fontsource/prompt/thai-500.css";
+@import "@fontsource/prompt/thai-600.css";
+@import "@fontsource/prompt/thai-700.css";
+@import "@fontsource/sarabun/latin-400.css";
+@import "@fontsource/sarabun/latin-500.css";
+@import "@fontsource/sarabun/latin-600.css";
+@import "@fontsource/sarabun/thai-400.css";
+@import "@fontsource/sarabun/thai-500.css";
+@import "@fontsource/sarabun/thai-600.css";
+@import "vue-sonner/style.css";
+
+/* ---------- Design tokens: สมุดบัญชี (passbook) ---------- */
+@theme {
+  --font-sans: "Sarabun", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Prompt", "Sarabun", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #16263f; /* ตัวอักษรหลัก / sidebar */
+  --color-paper: #edf1f6; /* พื้นหลังหน้า */
+  --color-sheet: #ffffff; /* หน้าสมุด / แผ่นเนื้อหา */
+  --color-rule: #c7d3e3; /* เส้นบรรทัด */
+  --color-bank: #1f5fbf; /* ปุ่มหลัก / โฟกัส */
+  --color-bank-deep: #194fa0;
+  --color-coin: #f2b632; /* เหลืองจากโลโก้ ใช้เฉพาะตราประทับ */
+  --color-credit: #1c8c5e; /* เงินเข้า */
+  --color-debit: #c23b3b; /* เงินออก */
+  --color-muted: #5b6b82; /* ข้อความรอง (ผ่าน AA บน paper/sheet) */
+}
+
+/* toast (vue-sonner): ปรับให้เข้าธีมสมุดบัญชี (selector ต้องหนักเท่า [data-sonner-theme='light'] ของไลบรารีถึงจะทับได้) */
+[data-sonner-toaster][data-sonner-theme] {
+  font-family: var(--font-sans);
+  --border-radius: 6px;
+  --normal-bg: var(--color-sheet);
+  --normal-text: var(--color-ink);
+  --normal-border: var(--color-rule);
+  --success-bg: color-mix(in srgb, var(--color-credit) 8%, white);
+  --success-border: color-mix(in srgb, var(--color-credit) 35%, white);
+  --success-text: var(--color-credit);
+  --error-bg: color-mix(in srgb, var(--color-debit) 7%, white);
+  --error-border: color-mix(in srgb, var(--color-debit) 35%, white);
+  --error-text: var(--color-debit);
+  --warning-bg: color-mix(in srgb, var(--color-coin) 18%, white);
+  --warning-border: color-mix(in srgb, var(--color-coin) 60%, white);
+  --warning-text: #7a5400;
+}
+[data-sonner-toast] [data-description] {
+  color: inherit;
+  opacity: 0.85;
+  white-space: pre-line;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-bank);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ---------- ส่วนประกอบกลางที่ใช้ซ้ำ ---------- */
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* ปุ่ม */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+    cursor: pointer;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-bank);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-bank-deep);
+  }
+  .btn-credit {
+    background: var(--color-credit);
+    color: #fff;
+  }
+  .btn-credit:hover:not(:disabled) {
+    background: #167350;
+  }
+  .btn-debit {
+    background: var(--color-debit);
+    color: #fff;
+  }
+  .btn-debit:hover:not(:disabled) {
+    background: #a53030;
+  }
+  .btn-quiet {
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    border: 1px solid var(--color-rule);
+  }
+  .btn-quiet:hover:not(:disabled) {
+    background: var(--color-paper);
+  }
+
+  /* ช่องกรอก */
+  .field {
+    width: 100%;
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    border: 1px solid var(--color-rule);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-bank);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-bank) 22%, transparent);
+  }
+  .field::placeholder {
+    color: #8696ad;
+  }
+
+  /* แผ่นเนื้อหา: พื้นขาว ขอบบางสีเส้นบรรทัด ไม่มีเงา */
+  .sheet {
+    background: var(--color-sheet);
+    border: 1px solid var(--color-rule);
+    border-radius: 4px;
+  }
+
+  /* หน้าสมุดบัญชี: ขอบเจาะรูทางซ้ายแบบรูเย็บสมุด */
+  .passbook {
+    position: relative;
+    background-color: var(--color-sheet);
+    background-image: radial-gradient(circle at 14px 50%, var(--color-paper) 5px, transparent 5.5px);
+    background-size: 28px 28px;
+    background-repeat: repeat-y;
+    background-origin: border-box;
+    border: 1px solid var(--color-rule);
+    border-radius: 4px;
+  }
+  .passbook > .passbook-page {
+    margin-left: 28px;
+    background: var(--color-sheet);
+    border-left: 1px solid var(--color-rule);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 3px 3px 0;
+  }
+
+  /* ตารางแบบสมุดบัญชี */
+  .ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .ledger thead th {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--color-ink);
+    white-space: nowrap;
+  }
+  .ledger tbody td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--color-rule);
+    vertical-align: top;
+  }
+  .ledger .num {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* modal: พื้นหลังหรี่แต่ยังเห็นหน้าเดิมด้านหลัง */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: color-mix(in srgb, var(--color-ink) 45%, transparent);
+    backdrop-filter: blur(3px);
+  }
+  .modal-panel {
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 100%;
+    box-shadow: 0 20px 50px -12px rgb(22 38 63 / 0.45);
+    animation: panel-in 0.16s ease-out;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* สลิป "พิมพ์ออก": เลื่อนลงมาจากช่องออกสลิป (ตอบสนองการเปิดสลิป ไม่ใช่ลูกเล่นลอยๆ) */
+@keyframes slip-print {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-14px);
+  }
+  to {
+    clip-path: inset(0 0 -20px 0);
+    transform: none;
+  }
+}
+
+
  /* body,
 html {
     --font-sans:

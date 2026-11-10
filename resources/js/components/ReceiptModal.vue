@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed, nextTick } from "vue";
 import { toPng } from "html-to-image";
+import { Download, Printer } from "lucide-vue-next";
 import axios from "axios";
 import { authHeaders, handleAuthError, formatMoney } from "@/composables/useAuth";
 import { format } from "date-fns";
@@ -83,98 +84,126 @@ const downloadReceipt = async () => {
 </script>
 
 <template>
-  <div class="receipt-overlay fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[70] p-4">
-    <div class="w-96 max-w-full">
-      <div id="receipt-slip" ref="slip" class="bg-white text-gray-800 rounded-lg shadow-xl overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-900 to-teal-700 text-white px-6 py-4 flex items-center space-x-3">
-          <img src="/bank_2830289.png" alt="" class="h-10" />
+  <div class="receipt-overlay modal-backdrop z-[70]" role="dialog" aria-modal="true" aria-label="Transaction receipt">
+    <div class="receipt-wrap w-96 max-w-full">
+      <!-- ตัวสลิป: id/ref นี้ถูกใช้ตอนบันทึกเป็นรูปและพิมพ์ อย่าเปลี่ยนชื่อ -->
+      <div id="receipt-slip" ref="slip" class="receipt-slip bg-sheet text-ink">
+        <div class="flex items-center gap-3 bg-ink px-6 py-4 text-white">
+          <img src="/bank_2830289.png" alt="" class="h-10 w-10 object-contain" />
           <div>
-            <p class="font-bold text-lg leading-tight">Chino Bank</p>
-            <p class="text-xs text-teal-100">Transaction Receipt</p>
+            <p class="font-display text-lg font-semibold leading-tight">Chino Bank</p>
+            <p class="text-sm text-white/70">Transaction receipt</p>
           </div>
         </div>
 
-        <p v-if="loading" class="p-8 text-center text-gray-500">Loading receipt...</p>
-        <p v-else-if="errorMessage" class="p-8 text-center text-red-500">{{ errorMessage }}</p>
+        <p v-if="loading" class="px-6 py-10 text-center text-muted">Loading receipt...</p>
+        <p v-else-if="errorMessage" class="px-6 py-10 text-center text-debit">{{ errorMessage }}</p>
 
-        <div v-else-if="receipt" class="px-6 py-5">
-          <div class="text-center">
-            <p class="text-green-600 font-semibold">✅ {{ title }} successful</p>
-            <p class="text-3xl font-bold mt-2" :class="incoming ? 'text-green-600' : 'text-red-600'">
-              {{ incoming ? "+" : "-" }}฿{{ formatMoney(receipt.amount) }}
-            </p>
-            <p class="text-xs text-gray-500 mt-1">{{ dateText }}</p>
+        <div v-else-if="receipt" class="px-6 pb-8 pt-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="font-medium">{{ title }}</p>
+              <p class="mt-1 font-display text-3xl font-semibold" :class="incoming ? 'text-credit' : 'text-debit'">
+                {{ incoming ? "+" : "-" }}฿{{ formatMoney(receipt.amount) }}
+              </p>
+              <p class="mt-1 text-sm text-muted">{{ dateText }}</p>
+            </div>
+            <span class="receipt-stamp" aria-label="Completed">Completed</span>
           </div>
 
-          <div class="border-t border-dashed my-4"></div>
+          <div class="my-5 border-t border-dashed border-rule"></div>
 
-          <dl class="text-sm space-y-3">
+          <dl class="space-y-4 text-sm">
             <template v-if="fromTo">
               <div>
-                <dt class="text-gray-500">From</dt>
-                <dd class="font-semibold">{{ fromTo.from.label }}</dd>
-                <dd class="text-gray-500">Account {{ fromTo.from.account }}</dd>
+                <dt class="text-muted">From</dt>
+                <dd class="font-medium">{{ fromTo.from.label }}</dd>
+                <dd class="text-muted">Account {{ fromTo.from.account }}</dd>
               </div>
               <div>
-                <dt class="text-gray-500">To</dt>
-                <dd class="font-semibold">{{ fromTo.to.label }}</dd>
-                <dd class="text-gray-500">Account {{ fromTo.to.account }}</dd>
+                <dt class="text-muted">To</dt>
+                <dd class="font-medium">{{ fromTo.to.label }}</dd>
+                <dd class="text-muted">Account {{ fromTo.to.account }}</dd>
               </div>
             </template>
             <div v-else>
-              <dt class="text-gray-500">Account</dt>
-              <dd class="font-semibold">{{ receipt.account.holder_name }}</dd>
-              <dd class="text-gray-500">Account {{ receipt.account.account_id }}</dd>
+              <dt class="text-muted">Account</dt>
+              <dd class="font-medium">{{ receipt.account.holder_name }}</dd>
+              <dd class="text-muted">Account {{ receipt.account.account_id }}</dd>
             </div>
 
             <div class="flex justify-between">
-              <dt class="text-gray-500">Fee</dt>
-              <dd class="font-semibold">฿0.00</dd>
+              <dt class="text-muted">Fee</dt>
+              <dd class="font-medium">฿0.00</dd>
             </div>
             <div class="flex justify-between">
-              <dt class="text-gray-500">Balance after</dt>
-              <dd class="font-semibold">฿{{ formatMoney(receipt.balance) }}</dd>
+              <dt class="text-muted">Balance after</dt>
+              <dd class="font-display font-semibold">฿{{ formatMoney(receipt.balance) }}</dd>
             </div>
           </dl>
 
-          <div class="border-t border-dashed my-4"></div>
+          <div class="my-5 border-t border-dashed border-rule"></div>
 
-          <div class="text-center">
-            <p class="text-xs text-gray-500">Reference No.</p>
-            <p class="font-mono font-bold tracking-widest">{{ receipt.reference }}</p>
+          <div>
+            <p class="text-sm text-muted">Reference</p>
+            <p class="font-display text-lg font-semibold tracking-widest">{{ receipt.reference }}</p>
           </div>
         </div>
       </div>
 
-      <div class="receipt-actions flex space-x-3 mt-4">
-        <button
-          v-if="receipt"
-          @click="downloadReceipt"
-          :disabled="downloading"
-          class="flex-1 py-2 rounded-lg bg-white/90 hover:bg-white disabled:opacity-60 text-blue-900 font-semibold transition"
-        >
-          {{ downloading ? "Saving..." : "⬇️ Download" }}
+      <div class="receipt-actions mt-5 flex gap-3">
+        <button v-if="receipt" type="button" @click="downloadReceipt" :disabled="downloading" class="btn btn-quiet flex-1">
+          <Download class="h-4 w-4" /> {{ downloading ? "Saving..." : "Download" }}
         </button>
-        <button
-          v-if="receipt"
-          @click="printReceipt"
-          class="py-2 px-3 rounded-lg bg-white/90 hover:bg-white text-blue-900 font-semibold transition"
-          title="Print / Save PDF"
-        >
-          🖨️
+        <button v-if="receipt" type="button" @click="printReceipt" class="btn btn-quiet" aria-label="Print or save as PDF">
+          <Printer class="h-4 w-4" />
         </button>
-        <button
-          @click="emit('close')"
-          class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
-        >
-          Close
-        </button>
+        <button type="button" @click="emit('close')" class="btn btn-primary flex-1">Done</button>
       </div>
     </div>
   </div>
 </template>
 
 <style>
+/* สลิป "พิมพ์ออก": เลื่อนลงมาจากช่องออกสลิป (animation อยู่ที่ตัวห่อ ไม่ใช่ตัวสลิป เพื่อไม่ให้รูปที่บันทึกโดนตัดกลางแอนิเมชัน) */
+.receipt-wrap {
+  animation: slip-print 0.45s ease-out;
+}
+
+.receipt-slip {
+  position: relative;
+  border-radius: 4px 4px 0 0;
+  overflow: visible;
+  box-shadow: 0 20px 50px -12px rgb(22 38 63 / 0.45);
+}
+
+/* ขอบล่างหยักแบบสลิปธนาคาร */
+.receipt-slip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 10px;
+  background:
+    linear-gradient(-45deg, transparent 7px, #ffffff 0) 0 0 / 14px 10px,
+    linear-gradient(45deg, transparent 7px, #ffffff 0) 0 0 / 14px 10px;
+}
+
+/* ตราประทับ: ใช้สีเหลืองเหรียญเฉพาะจุดนี้ */
+.receipt-stamp {
+  flex-shrink: 0;
+  transform: rotate(-7deg);
+  border: 2px solid #c98f0a;
+  color: #8a5f00;
+  background: color-mix(in srgb, #f2b632 22%, white);
+  border-radius: 4px;
+  padding: 0.15rem 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 /* พิมพ์เฉพาะสลิป ซ่อนส่วนอื่นของหน้า */
 @media print {
   body * {
@@ -189,6 +218,9 @@ const downloadReceipt = async () => {
     inset: 0 !important;
     background: none !important;
     backdrop-filter: none !important;
+  }
+  .receipt-wrap {
+    animation: none !important;
   }
   #receipt-slip {
     box-shadow: none !important;

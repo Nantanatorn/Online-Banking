@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import ReceiptModal from "@/components/ReceiptModal.vue";
+import { X, Star, ArrowDownToLine, ArrowUpFromLine, Send, Delete, CircleCheck, CircleAlert } from "lucide-vue-next";
 import axios from "axios";
 import { authHeaders, handleAuthError, formatMoney } from "@/composables/useAuth";
 
@@ -298,204 +299,173 @@ const submitPin = async () => {
 
 <template>
   <div>
-    <!-- ✅ Navbar -->
-    <div class="flex items-center space-x-4">
-
-      <!-- ✅ Action Buttons -->
-      <button
-        @click="openDepositModal"
-        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition"
-      >
-        Deposit
-      </button>
-      <button
-        @click="openWithdrawModal"
-        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition"
-      >
-        Withdraw
-      </button>
-      <button
-        @click="openTransferModal"
-        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition"
-      >
-        Transfer
-      </button>
+    <!-- ปุ่มทำรายการ -->
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" @click="openDepositModal" class="btn btn-credit"><ArrowDownToLine class="h-4 w-4" /> Deposit</button>
+      <button type="button" @click="openWithdrawModal" class="btn btn-debit"><ArrowUpFromLine class="h-4 w-4" /> Withdraw</button>
+      <button type="button" @click="openTransferModal" class="btn btn-primary"><Send class="h-4 w-4" /> Transfer</button>
     </div>
 
-    <!-- ✅ Deposit Modal -->
-    <div v-if="isDepositModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-gray-800">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">Deposit Money</h2>
-          <button @click="closeModal" class="text-gray-600 hover:text-red-500">✖</button>
+    <!-- Deposit -->
+    <div v-if="isDepositModalOpen" class="modal-backdrop z-50" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
+      <div class="modal-panel max-w-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 id="deposit-title" class="font-display text-xl font-semibold">Deposit money</h2>
+          <button type="button" @click="closeModal" class="rounded-md p-1 text-muted hover:bg-paper hover:text-ink" aria-label="Close"><X class="h-5 w-5" /></button>
         </div>
 
-        <label class="block text-sm font-medium">Amount (THB):</label>
-        <input type="number" v-model="amount" class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-green-300" placeholder="Enter deposit amount" />
+        <label for="deposit-amount" class="mb-1 block text-sm font-medium">Amount (THB)</label>
+        <input id="deposit-amount" type="number" v-model="amount" class="field" placeholder="0.00" />
 
-        <p v-if="successMessage" class="text-green-600 mt-2">✅ {{ successMessage }}</p>
-        <p v-if="errorMessage" class="text-red-500 mt-2">❌ {{ errorMessage }}</p>
+        <p v-if="successMessage" class="mt-3 flex items-center gap-2 text-sm text-credit"><CircleCheck class="h-4 w-4" /> {{ successMessage }}</p>
+        <p v-if="errorMessage" role="alert" class="mt-3 flex items-center gap-2 text-sm text-debit"><CircleAlert class="h-4 w-4" /> {{ errorMessage }}</p>
 
-        <button @click="submitDeposit" class="bg-green-600 hover:bg-green-700 text-white w-full mt-4 py-2 rounded-lg">
-          Confirm Deposit
-        </button>
+        <button type="button" @click="submitDeposit" class="btn btn-credit mt-5 w-full">Deposit</button>
       </div>
     </div>
 
-    <!-- ✅ Withdraw Modal -->
-    <div v-if="isWithdrawModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-gray-800">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">Withdraw Money</h2>
-          <button @click="closeModal" class="text-gray-600 hover:text-red-500">✖</button>
+    <!-- Withdraw -->
+    <div v-if="isWithdrawModalOpen" class="modal-backdrop z-50" role="dialog" aria-modal="true" aria-labelledby="withdraw-title">
+      <div class="modal-panel max-w-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 id="withdraw-title" class="font-display text-xl font-semibold">Withdraw money</h2>
+          <button type="button" @click="closeModal" class="rounded-md p-1 text-muted hover:bg-paper hover:text-ink" aria-label="Close"><X class="h-5 w-5" /></button>
         </div>
 
-        <label class="block text-sm font-medium">Amount (THB):</label>
-        <input type="number" v-model="amount" class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-red-300" placeholder="Enter withdrawal amount" />
+        <label for="withdraw-amount" class="mb-1 block text-sm font-medium">Amount (THB)</label>
+        <input id="withdraw-amount" type="number" v-model="amount" class="field" placeholder="0.00" />
 
-        <p v-if="successMessage" class="text-green-600 mt-2">✅ {{ successMessage }}</p>
-        <p v-if="errorMessage" class="text-red-500 mt-2">❌ {{ errorMessage }}</p>
+        <p v-if="successMessage" class="mt-3 flex items-center gap-2 text-sm text-credit"><CircleCheck class="h-4 w-4" /> {{ successMessage }}</p>
+        <p v-if="errorMessage" role="alert" class="mt-3 flex items-center gap-2 text-sm text-debit"><CircleAlert class="h-4 w-4" /> {{ errorMessage }}</p>
 
-        <button @click="submitWithdraw" class="bg-red-600 hover:bg-red-700 text-white w-full mt-4 py-2 rounded-lg">
-          Confirm Withdraw
-        </button>
+        <button type="button" @click="submitWithdraw" class="btn btn-debit mt-5 w-full">Withdraw</button>
       </div>
     </div>
 
-    <!-- ✅ Transfer Modal -->
-    <div v-if="isTransferModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-gray-800">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">Transfer Money</h2>
-          <button @click="closeModal" class="text-gray-600 hover:text-red-500">✖</button>
+    <!-- Transfer -->
+    <div v-if="isTransferModalOpen" class="modal-backdrop z-50" role="dialog" aria-modal="true" aria-labelledby="transfer-title">
+      <div class="modal-panel max-w-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 id="transfer-title" class="font-display text-xl font-semibold">Transfer money</h2>
+          <button type="button" @click="closeModal" class="rounded-md p-1 text-muted hover:bg-paper hover:text-ink" aria-label="Close"><X class="h-5 w-5" /></button>
         </div>
 
-        <label class="block text-sm font-medium">Amount (THB):</label>
-        <input type="number" v-model="amount" class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="Enter transfer amount" />
-        <p v-if="transferLimit" class="text-xs text-gray-500 mt-1">
-          Daily limit ฿{{ formatMoney(transferLimit.limit) }} · Remaining today
-          <span class="font-semibold text-blue-600">฿{{ formatMoney(transferLimit.remaining) }}</span>
-          (resets at midnight)
+        <label for="transfer-amount" class="mb-1 block text-sm font-medium">Amount (THB)</label>
+        <input id="transfer-amount" type="number" v-model="amount" class="field" placeholder="0.00" />
+        <p v-if="transferLimit" class="mt-1.5 text-sm text-muted">
+          Daily limit ฿{{ formatMoney(transferLimit.limit) }}. Remaining today
+          <span class="font-medium text-ink">฿{{ formatMoney(transferLimit.remaining) }}</span>, resets at midnight.
         </p>
 
-        <label class="block text-sm font-medium mt-3">Target Account ID:</label>
-        <input type="text" v-model="targetAccountId" class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="Enter account ID" />
+        <label for="transfer-target" class="mb-1 mt-4 block text-sm font-medium">To account</label>
+        <input id="transfer-target" type="text" v-model="targetAccountId" class="field" placeholder="Account number" />
 
-        <!-- ⭐ บัญชีที่บันทึกไว้ -->
-        <div v-if="savedAccounts.length" class="mt-3">
-          <p class="text-xs text-gray-500 mb-1">⭐ Saved accounts</p>
-          <div class="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+        <!-- บัญชีที่บันทึกไว้ -->
+        <div v-if="savedAccounts.length" class="mt-4">
+          <p class="mb-1.5 flex items-center gap-1.5 text-sm text-muted"><Star class="h-4 w-4" /> Saved accounts</p>
+          <div class="flex max-h-28 flex-wrap gap-2 overflow-y-auto">
             <button
               v-for="a in savedAccounts"
               :key="a.id"
               type="button"
               @click="pickSaved(a)"
-              class="text-left px-3 py-1 rounded-lg border text-sm transition"
-              :class="String(a.account_id) === String(targetAccountId).trim() ? 'bg-blue-100 border-blue-500' : 'bg-gray-50 hover:bg-gray-100'"
+              class="rounded-md border px-3 py-1.5 text-left text-sm transition-colors"
+              :class="String(a.account_id) === String(targetAccountId).trim() ? 'border-bank bg-bank/10' : 'border-rule bg-sheet hover:bg-paper'"
             >
-              <span class="font-semibold">{{ a.nickname || a.holder_name || "Account" }}</span>
-              <span class="block text-xs text-gray-500">{{ a.account_id }}</span>
+              <span class="font-medium">{{ a.nickname || a.holder_name || "Account" }}</span>
+              <span class="block text-xs text-muted">{{ a.account_id }}</span>
             </button>
           </div>
         </div>
 
-        <!-- ☆ บันทึกบัญชีนี้ -->
-        <div v-if="targetAccountId && !isTargetSaved" class="mt-3">
-          <label class="flex items-center space-x-2 text-sm cursor-pointer">
-            <input type="checkbox" v-model="saveRecipient" />
-            <span>☆ Save this account for next time</span>
+        <!-- บันทึกบัญชีนี้ -->
+        <div v-if="targetAccountId && !isTargetSaved" class="mt-4">
+          <label class="flex cursor-pointer items-center gap-2 text-sm">
+            <input type="checkbox" v-model="saveRecipient" class="h-4 w-4 accent-[#1f5fbf]" />
+            <span>Save this account for next time</span>
           </label>
-          <input
-            v-if="saveRecipient"
-            type="text"
-            v-model="recipientNickname"
-            maxlength="50"
-            class="w-full mt-2 px-3 py-1 border rounded-lg text-sm focus:ring focus:ring-blue-300"
-            placeholder="Nickname (optional)"
-          />
+          <input v-if="saveRecipient" type="text" v-model="recipientNickname" maxlength="50" class="field mt-2" placeholder="Nickname (optional)" />
         </div>
 
-        <p v-if="successMessage" class="text-green-600 mt-2">✅ {{ successMessage }}</p>
-        <p v-if="errorMessage" class="text-red-500 mt-2">❌ {{ errorMessage }}</p>
+        <p v-if="successMessage" class="mt-3 flex items-center gap-2 text-sm text-credit"><CircleCheck class="h-4 w-4" /> {{ successMessage }}</p>
+        <p v-if="errorMessage" role="alert" class="mt-3 flex items-center gap-2 text-sm text-debit"><CircleAlert class="h-4 w-4" /> {{ errorMessage }}</p>
 
-        <button @click="submitTransfer" :disabled="lookupLoading" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white w-full mt-4 py-2 rounded-lg">
-          {{ lookupLoading ? "Checking account..." : "Confirm Transfer" }}
+        <button type="button" @click="submitTransfer" :disabled="lookupLoading" class="btn btn-primary mt-5 w-full">
+          {{ lookupLoading ? "Checking account..." : "Review transfer" }}
         </button>
       </div>
     </div>
 
-    <!-- ✅ Confirm Recipient Modal (ซ้อนบน Transfer) -->
-    <div v-if="isConfirmModalOpen && recipient" class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[55]">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96 text-gray-800">
-        <h2 class="text-xl font-semibold mb-4">Confirm Transfer</h2>
+    <!-- ยืนยันผู้รับ (ซ้อนบน Transfer) -->
+    <div v-if="isConfirmModalOpen && recipient" class="modal-backdrop z-[55]" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="modal-panel max-w-sm">
+        <h2 id="confirm-title" class="mb-4 font-display text-xl font-semibold">Check the recipient</h2>
 
-        <div class="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
+        <dl class="space-y-3 rounded-md border border-rule bg-paper p-4 text-sm">
           <div>
-            <p class="text-gray-500">Recipient</p>
-            <p class="text-lg font-bold">{{ recipient.holder_name }}</p>
+            <dt class="text-muted">Recipient</dt>
+            <dd class="font-display text-lg font-semibold">{{ recipient.holder_name }}</dd>
           </div>
           <div>
-            <p class="text-gray-500">Account ID</p>
-            <p class="font-semibold">{{ recipient.account_id }}</p>
+            <dt class="text-muted">Account number</dt>
+            <dd class="font-medium">{{ recipient.account_id }}</dd>
           </div>
-          <div>
-            <p class="text-gray-500">Amount</p>
-            <p class="text-2xl font-bold text-blue-600">฿{{ formatMoney(amount) }}</p>
+          <div class="border-t border-rule pt-3">
+            <dt class="text-muted">Amount</dt>
+            <dd class="font-display text-2xl font-semibold">฿{{ formatMoney(amount) }}</dd>
           </div>
-        </div>
+        </dl>
 
-        <p class="text-xs text-gray-500 mt-3">Please check the recipient carefully. Transfers cannot be undone.</p>
+        <p class="mt-3 text-sm text-muted">Transfers can't be undone, so make sure the name and account are right.</p>
 
-        <div class="flex space-x-3 mt-4">
-          <button @click="isConfirmModalOpen = false" class="flex-1 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">Back</button>
-          <button @click="confirmRecipient" class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">Continue</button>
+        <div class="mt-5 flex gap-3">
+          <button type="button" @click="isConfirmModalOpen = false" class="btn btn-quiet flex-1">Back</button>
+          <button type="button" @click="confirmRecipient" class="btn btn-primary flex-1">Enter PIN</button>
         </div>
       </div>
     </div>
 
-    <!-- ✅ สลิป/ใบเสร็จหลังทำรายการ -->
+    <!-- สลิป/ใบเสร็จหลังทำรายการ -->
     <ReceiptModal v-if="receiptId" :transaction-id="receiptId" auto-download @close="receiptId = null" />
 
-    <!-- ✅ PIN Modal (ซ้อนบน Withdraw/Transfer) -->
-    <div v-if="isPinModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[60]">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-80 text-gray-800">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-xl font-semibold">Enter PIN</h2>
-          <button @click="closePinModal" class="text-gray-600 hover:text-red-500">✖</button>
+    <!-- PIN (ซ้อนบน Withdraw/Transfer) -->
+    <div v-if="isPinModalOpen" class="modal-backdrop z-[60]" role="dialog" aria-modal="true" aria-labelledby="pin-title">
+      <div class="modal-panel max-w-xs">
+        <div class="mb-1 flex items-center justify-between">
+          <h2 id="pin-title" class="font-display text-xl font-semibold">Enter your PIN</h2>
+          <button type="button" @click="closePinModal" class="rounded-md p-1 text-muted hover:bg-paper hover:text-ink" aria-label="Close"><X class="h-5 w-5" /></button>
         </div>
-        <p class="text-sm text-gray-500 mb-4">
-          Confirm {{ pendingAction === "withdraw" ? "withdrawal" : "transfer" }} of ฿{{ formatMoney(amount) }} with your 6-digit PIN.
+        <p class="mb-5 text-sm text-muted">
+          Confirm {{ pendingAction === "withdraw" ? "withdrawing" : "transferring" }} ฿{{ formatMoney(amount) }} with your 6-digit PIN.
         </p>
 
-        <div class="flex justify-center space-x-3 mb-2">
+        <div class="mb-2 flex justify-center gap-3" aria-hidden="true">
           <span
             v-for="n in PIN_LENGTH"
             :key="n"
-            class="h-4 w-4 rounded-full border-2 transition"
-            :class="n <= pin.length ? 'bg-blue-600 border-blue-600' : 'border-gray-400'"
+            class="h-3.5 w-3.5 rounded-full border-2 transition-colors"
+            :class="n <= pin.length ? 'border-ink bg-ink' : 'border-rule'"
           ></span>
         </div>
-        <p class="text-red-500 text-sm text-center h-5">{{ pinError }}</p>
+        <p class="h-5 text-center text-sm text-debit" role="alert">{{ pinError }}</p>
 
-        <div class="grid grid-cols-3 gap-3 mt-2">
+        <div class="mt-2 grid grid-cols-3 gap-2">
           <button
             v-for="key in pinKeys"
             :key="key"
+            type="button"
             @click="pressKey(key)"
             :disabled="pinLoading"
-            class="h-12 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-xl font-semibold transition disabled:opacity-50"
+            class="flex h-14 items-center justify-center rounded-md border border-rule bg-sheet font-display text-xl font-medium transition-colors hover:bg-paper active:bg-rule disabled:opacity-50"
+            :aria-label="key === 'back' ? 'Delete last digit' : key === 'clear' ? 'Clear PIN' : key"
           >
-            <template v-if="key === 'back'">⌫</template>
-            <template v-else-if="key === 'clear'"><span class="text-sm">Clear</span></template>
+            <Delete v-if="key === 'back'" class="h-5 w-5" />
+            <span v-else-if="key === 'clear'" class="text-sm">Clear</span>
             <template v-else>{{ key }}</template>
           </button>
         </div>
 
-        <button
-          @click="submitPin"
-          :disabled="pin.length !== PIN_LENGTH || pinLoading"
-          class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white w-full mt-4 py-2 rounded-lg transition"
-        >
+        <button type="button" @click="submitPin" :disabled="pin.length !== PIN_LENGTH || pinLoading" class="btn btn-primary mt-4 w-full">
           {{ pinLoading ? "Processing..." : "Confirm" }}
         </button>
       </div>

@@ -13,6 +13,32 @@ It was created by **Nantanatorn** in **2025** as a learning project, to study ho
 
 > This is a simulation. It is not connected to any real bank or payment system.
 
+## 📸 Screenshots
+
+The screenshots below use demo data.
+
+**Public pages**
+
+![Home page](docs/screenshots/home.png)
+
+| Log in | Open an account |
+|---|---|
+| ![Log in](docs/screenshots/login.png) | ![Open an account](docs/screenshots/register.png) |
+
+**Dashboard and transactions**
+
+![Dashboard with balance, saved accounts and passbook-style transaction history](docs/screenshots/dashboard.png)
+
+![Transactions page with overview chart and filters](docs/screenshots/transactions.png)
+
+| Transfer (daily limit and saved accounts) | PIN confirmation |
+|---|---|
+| ![Transfer form](docs/screenshots/transfer.png) | ![PIN keypad](docs/screenshots/pin.png) |
+
+| Receipt (downloaded as an image) | Mobile layout |
+|---|---|
+| ![Receipt](docs/screenshots/receipt.png) | ![Dashboard on mobile](docs/screenshots/mobile.png) |
+
 ## 🛠️ Tech Stack
 
 | Area | Technology |
@@ -21,8 +47,8 @@ It was created by **Nantanatorn** in **2025** as a learning project, to study ho
 | Authentication | JWT via `php-open-source-saver/jwt-auth` (login with national ID + PIN) |
 | Database | PostgreSQL (recommended, and required for the test suite); SQLite/MySQL can be used for casual experiments |
 | Frontend | Vue 3, Inertia.js 2, Vite 6 |
-| Styling | Tailwind CSS 4, DaisyUI |
-| Frontend libraries | Chart.js (transaction charts), lucide-vue-next (icons), SweetAlert2, Swiper, date-fns, html-to-image (saving receipts as images) |
+| Styling | Tailwind CSS 4, with a passbook-style design (Prompt and Sarabun fonts, bundled via `@fontsource` so no CDN is needed) |
+| Frontend libraries | Chart.js (transaction charts), lucide-vue-next (icons), vue-sonner (toast notifications), Swiper, date-fns, html-to-image (saving receipts as images) |
 | Testing | PHPUnit via `php artisan test` |
 
 ## ✨ Features
